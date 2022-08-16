@@ -26,18 +26,30 @@ namespace StructureValidator
             OpenFileDialog dlg = new OpenFileDialog();
             string fileName1 = String.Empty;
 
-            if (dlg.ShowDialog() == DialogResult.OK)
+            using (var fbd = new FolderBrowserDialog())
             {
-                fileName1 = dlg.FileName;
-                sr1 = new StreamReader(fileName1);
+                DialogResult result = fbd.ShowDialog();
 
-                while (!sr1.EndOfStream)
+                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
-                    string linha = sr1.ReadLine();
-                    configuraLinhaEfeitos(ref efeitos, delimiterChar, linha);
+                    var files = Directory.EnumerateFiles(fbd.SelectedPath);
+
+                    foreach (string file in files)
+                    {
+                        using (FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read))
+                        {
+                            sr1 = new StreamReader(file);
+
+                            while (!sr1.EndOfStream)
+                            {
+                                string linha = sr1.ReadLine();
+                                configuraLinhaEfeitos(ref efeitos, delimiterChar, linha);
+                            }
+                        }
+                    }
                 }
-                MessageBox.Show("Validação efetuada com sucesso.");
             }
+            MessageBox.Show("Validação efetuada com sucesso.");
         }
         private static void configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, string dados)
         {
@@ -119,7 +131,7 @@ namespace StructureValidator
                 if (efeito.Protocolo.Length != 36)
                     throw new Exception("Protocolo invalido " +
                         efeito.Protocolo);
-                if (efeito.IndicadorEfeitosContrato.Length != 1)
+                if (efeito.IndicadorEfeitosContrato.Length >= 5)
                     throw new Exception("IndicadorEfeitosContrato invalido " +
                         efeito.Protocolo);
                 if (efeito.EntidadeRegistradora.Length != 14)
@@ -146,7 +158,10 @@ namespace StructureValidator
                 if (efeito.ISPB.Length != 8)
                     throw new Exception("ISPB invalido " +
                         efeito.Protocolo);
-                
+                if(efeito.IDContrato.Length != 36)
+                    throw new Exception("IDContrato invalido " +
+                        efeito.Protocolo);
+
             }
         }
         static string PegarConteudoForaAspas(string texto, int linha)
